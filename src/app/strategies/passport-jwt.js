@@ -1,23 +1,16 @@
-'use strict';
-
-import User from '../../models/user';
-import { USER_NOT_EXIST } from '../configs/response-messages';
+import { User } from '../../models';
+import { USER_NOT_EXIST } from '../configs/messages';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import AuthError from '../errors/auth-error';
-import ServiceUnavailable from '../errors/service-unavailable';
+import { AuthError } from '../errors';
 
 export default (secret, passport) => {
     passport.serializeUser((user, done) => {
-        done(null, user.id)
+        done(null, user.id);
     });
-    passport.deserializeUser((id, done) => {
-        User.query().findById(id).first()
-            .then((user) => {
-                user ? done(null, user) : done(new AuthError(USER_NOT_EXIST), null);
-            })
-            .catch((err) => {
-                done(err, null);
-            });
+    passport.deserializeUser(async (id, done) => {
+        let user = await User.query().findById(id)
+            .first();
+        user ? done(null, user) : done(new AuthError(USER_NOT_EXIST), null);
     });
 
     let jwtOptions = {
@@ -25,18 +18,14 @@ export default (secret, passport) => {
         secretOrKey: secret
     };
 
-    let strategy = new Strategy (jwtOptions, (payload, next) => {
-        User.query().findById(payload.id).first()
-            .then((user) => {
-                if (user) {
-                    next(null, user)
-                } else {
-                    next(new AuthError(USER_NOT_EXIST), false)
-                }
-                return null;
-            }).catch((err) => {
-            next(new ServiceUnavailable({message: err.message}), false);
-        });
+    let strategy = new Strategy (jwtOptions, async (payload, next) => {
+        let user = await User.query().findById(payload.id)
+            .first();
+        if (user) {
+            next(null, user);
+        } else {
+            next(new AuthError(USER_NOT_EXIST), false);
+        }
     });
     passport.use(strategy);
-}
+};

@@ -1,40 +1,31 @@
-'use strict';
+import {
+    dbHost,
+    dbUsername,
+    dbPassword,
+    dbDatabase,
+    databaseUrl
+} from '../helpers/config';
 
-const database = {
-    development: {
-        client: 'mysql',
-        connection: {
-            host: 'localhost',
-                user: '',
-            password: '',
-            database: '',
-            charset: 'utf8'
-        },
-        seeds: {
-            directory: './src/database/seeders'
-        },
-        migrations: {
-            tableName: 'migrations',
-            directory: './src/database/migrations'
-        }
-    },
-    production: {
-        client: 'mysql',
-        connection: {
-            host: '127.0.0.1',
-            user: '',
-            password: '',
-            database: '',
-            charset: 'utf8'
-        },
-        seeds: {
-            directory: './src/database/production_seeders'
-        },
-        migrations: {
-            tableName: 'migrations',
-            directory: './src/database/migrations'
-        }
-    }
+let connection = {
+    host: dbHost,
+    user: dbUsername,
+    password: dbPassword,
+    database: dbDatabase,
+    charset: 'utf8'
 };
 
-export default database[process.env.NODE_ENV || 'development'];
+if (typeof(databaseUrl) !== 'undefined' && databaseUrl !== '') {
+    connection = databaseUrl;
+}
+
+export default {
+    client: 'pg',
+    connection,
+    seeds: {
+        directory: './src/database/seeders'
+    },
+    migrations: {
+        tableName: 'migrations',
+        directory: './src/database/migrations'
+    }
+};

@@ -1,24 +1,26 @@
 import express from 'express';
 import cors from 'cors';
 import RateLimit from 'express-rate-limit';
-import logger from 'morgan';
 import passport from 'passport';
 import helmet from 'helmet';
-import Knex from 'knex';
-
-import { json, urlencoded } from 'body-parser';
-import { Model } from 'objection';
-
+import {json, urlencoded} from 'body-parser';
 import enableModules from './modules';
-
 import limiter from './configs/limiter';
 import corsOptions from './configs/cors';
 import params from './configs/params';
-import expressValidator from 'express-validator';
 import configPassport from './strategies/passport-jwt';
-import database from './configs/database';
-import { BAD_REQUEST_CODE } from './configs/status-codes';
+import configBasicPassport from './strategies/passport-basic';
+import {BAD_REQUEST_CODE} from './configs/status-codes';
 import cookieParser from 'cookie-parser';
+import expressValidator from 'express-validator';
+import Utils from './helpers/utils';
+import {ServiceUnavailable} from './errors';
+import {RollbarService} from './services';
+import verificationCronJob from '../cron/id-verification.scheduler';
+import sendReminderCronJob from '../cron/send-reminders';
+import {handleSSR} from '../../client/src/helpers/ssr/ssrProvider';
+
+const compression = require('compression');
 
 class Application {
     app;
@@ -30,56 +32,69 @@ class Application {
     }
     initApp() {
         this.configApp();
-        this.configDb();
         this.configPassport();
         this.setParams();
         this.setRouter();
         this.setErrorHandler();
         this.enableModules();
+        this.configCron();
     }
 
     configApp() {
-        this.app.use(cors(corsOptions))
-            .use(expressValidator())
-            .use(json())
-            .use(urlencoded({extended: true}))
-            .use(cookieParser())
+        this.app.use(compression())
+            .use(cors(corsOptions))
             .use(this.createLimiter())
+            .use(json())
+            .use(expressValidator({
+                customValidators: {
+                    isValidPhone: Utils.validatePhone
+                }
+            }))
+            .use(urlencoded({ extended: true }))
+            .use(cookieParser())
             .use(helmet());
-
-        if (this.app.get('env') !== 'production') {
-            this.app.use(logger('dev'));
-        }
     }
 
     createLimiter() {
         return new RateLimit(limiter);
     }
 
-    configDb() {
-        Model.knex(Knex(database))
-    }
     setParams() {
         this.app.set('json spaces', 4);
     }
+
     configPassport() {
         configPassport(params.tokenSecret, passport);
+        configBasicPassport(passport);
         this.app.use(passport.initialize())
-            .use(passport.session())
+            .use(passport.session());
     }
+
     setRouter() {
         this.router = express.Router();
         this.app.use(`/api`, this.router);
     }
 
+    configCron() {
+        verificationCronJob.start();
+        sendReminderCronJob.start();
+    }
+
     setErrorHandler() {
-        this.app.use((err, req, res, next) => {
-           return res.status (err.status || BAD_REQUEST_CODE).json({
-               status: BAD_REQUEST_CODE,
-               data: null,
-               message: err.message || '',
-               errors: err.errors || null
-           })
+        this.app.use(async (err, req, res, next) => {
+            if(!err.status) {
+                next(new ServiceUnavailable(err.message));
+            }
+
+            let status = err.status || BAD_REQUEST_CODE;
+
+            return res.status (status).json({
+                status: status,
+                data: null,
+                message: err.message || '',
+                errors: err.errors || null,
+                body: req.body
+            });
         });
     }
 

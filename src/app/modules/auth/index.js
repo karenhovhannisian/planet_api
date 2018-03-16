@@ -1,5 +1,3 @@
-'use strict';
-
 import { Router } from 'express';
 import endpoints from './endpoints';
 
@@ -22,6 +20,6 @@ export class AuthModule {
     }
 
     assignEndpoints() {
-        endpoints(this.router)
+        endpoints(this.router);
     }
 }

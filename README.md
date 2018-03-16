@@ -1,4 +1,4 @@
-# node-js-boilerplate
+# Planet App
 
 Project is written in Node.js + Express with the following libs:
 * Knex
@@ -9,33 +9,48 @@ Project is written in Node.js + Express with the following libs:
 * Express-Rate-Limit
 * Express-Validator
 * Jsonwebtoken
-* Mysql
+* PostgreSQL
 * Passport
 * Passport-Jwt
 * Moment
 
-### Installation
+## Config
 
-Go to project directory and install dependencies.
-
+```console
+cp .env.sample .env
+cp .env.sample .env.test
 ```
+
+## Setup
+
+Install the project.
+
+```console
 npm i
+```
+
+Fill out the `.env` and `.env.test`.
+
+```console
+npm run migrate
+```
+
+### Run tests
+
+*Terminal One*
+
+```console
+npm test
 ```
 
 ### Run in development mode
 
 ```
-npm run migrate:dev - Execute migrations for dev environment
-npm run seeder:dev - Execute seeders for dev environment
-
 npm run start:dev
 ```
 ### Run in production mode
 
 ```
-npm run migrate:prod - Execute migrations for prod environment
-npm run seeder:prod - Execute seeders for prod environment
-
-npm run start:prod
+npm start
 ```
 

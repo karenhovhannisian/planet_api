@@ -1,14 +1,14 @@
-import { Model, ValidationError } from 'objection';
-import { hashSync, genSaltSync, compareSync } from 'bcryptjs'
+import {Model, ValidationError} from 'objection';
+import {compareSync, genSaltSync, hashSync} from 'bcryptjs'
 import {
     EMAIL_MAX_LENGTH,
     NAME_MAX_LENGTH,
     PASSWORD_MAX_LENGTH,
-    PASSWORD_MIN_LENGTH } from '../app/configs/constants';
+    PASSWORD_MIN_LENGTH,
+    UNIQUE
+} from '../app/configs/messages';
 
-import Token from './token';
-
-export default class User extends Model {
+export class User extends Model {
     id;
     name;
     email;
@@ -54,17 +54,6 @@ export default class User extends Model {
         }
     };
 
-    static relationMappings = {
-        tokens: {
-            relation: Model.HasManyRelation,
-            modelClass: Token,
-            join: {
-                from: 'users.id',
-                to: 'user_tokens.user_id'
-            }
-        },
-    };
-
     constructor() {
         super();
     }
@@ -79,27 +68,32 @@ export default class User extends Model {
 
     $beforeInsert() {
         this.hashPassword();
-        return User.query().where('email', this.email).first()
+
+        return UserService.getUserByEmail(this.email)
             .then((dbUser) => {
-                if (dbUser) {
-                    throw new ValidationError({email: 'Email must be unique.'});
+                if (dbUser && dbUser.length > 0) {
+                    throw new ValidationError({ email: UNIQUE('Email') });
                 }
+
+                return dbUser;
             });
     }
 
     $beforeUpdate(opt) {
-        if (this.password && !compareSync(this.password, opt.old.password)) {
+        if (this.password) {
             this.hashPassword();
         }
-        // console.log(opt.old.email);
-        if (this.email && this.email !== opt.old.email) {
-            return User.query().where('email', this.email).first().then(dbUser => {
-                if (dbUser) {
-                    throw new ValidationError({email: 'Email must be unique.'});
-                }
-            });
-        }
 
+        if (this.email && this.email !== opt.old.email) {
+            return UserService.getUserByEmail(this.email)
+                .then(dbUser => {
+                    if (dbUser) {
+                        throw new ValidationError({ email: UNIQUE('Email') });
+                    }
+
+                    return dbUser;
+                });
+        }
     }
 
     getFields() {

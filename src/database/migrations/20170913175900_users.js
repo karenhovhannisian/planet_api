@@ -1,5 +1,3 @@
-'use strict';
-
 exports.up = (knex, Promise) => {
     return Promise.all([
         knex.schema.createTableIfNotExists('users', (tb) => {
