@@ -9,18 +9,11 @@ import limiter from './configs/limiter';
 import corsOptions from './configs/cors';
 import params from './configs/params';
 import configPassport from './strategies/passport-jwt';
-import configBasicPassport from './strategies/passport-basic';
 import {BAD_REQUEST_CODE} from './configs/status-codes';
 import cookieParser from 'cookie-parser';
 import expressValidator from 'express-validator';
-import Utils from './helpers/utils';
 import {ServiceUnavailable} from './errors';
-import {RollbarService} from './services';
-import verificationCronJob from '../cron/id-verification.scheduler';
-import sendReminderCronJob from '../cron/send-reminders';
-import {handleSSR} from '../../client/src/helpers/ssr/ssrProvider';
 
-const compression = require('compression');
 
 class Application {
     app;
@@ -37,19 +30,13 @@ class Application {
         this.setRouter();
         this.setErrorHandler();
         this.enableModules();
-        this.configCron();
     }
 
     configApp() {
-        this.app.use(compression())
-            .use(cors(corsOptions))
+        this.app.use(cors(corsOptions))
             .use(this.createLimiter())
             .use(json())
-            .use(expressValidator({
-                customValidators: {
-                    isValidPhone: Utils.validatePhone
-                }
-            }))
+            .use(expressValidator())
             .use(urlencoded({ extended: true }))
             .use(cookieParser())
             .use(helmet());
@@ -65,7 +52,6 @@ class Application {
 
     configPassport() {
         configPassport(params.tokenSecret, passport);
-        configBasicPassport(passport);
         this.app.use(passport.initialize())
             .use(passport.session());
     }
@@ -73,11 +59,6 @@ class Application {
     setRouter() {
         this.router = express.Router();
         this.app.use(`/api`, this.router);
-    }
-
-    configCron() {
-        verificationCronJob.start();
-        sendReminderCronJob.start();
     }
 
     setErrorHandler() {

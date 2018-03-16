@@ -11,7 +11,7 @@ import {
     PERMISSION_DENIED,
     SOMETHING_WENT_WRONG,
     VALIDATION_ERROR
-} from '../configs/constants';
+} from '../configs/messages';
 
 export class AuthError extends Error {
     status = UNAUTHORIZED_CODE;
