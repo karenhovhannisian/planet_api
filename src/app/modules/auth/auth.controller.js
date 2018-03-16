@@ -31,15 +31,12 @@ export class AuthController {
             const tokenInfo = Utils.signJWTToken(user);
             res.cookie('refresh_token', tokenInfo.refreshToken, REFRESH_TOKEN_COOKIE_CONFIG);
 
-            const customer = await UserService.getCustomerByUser(user);
-
             return res.status(SUCCESS_CODE).json({
                 access_token: tokenInfo.token,
                 refresh_token: tokenInfo.refreshToken,
                 user: {
                     id: user.id,
                     name: user.name,
-                    status: user.status,
                     email: user.email
                 }
             });

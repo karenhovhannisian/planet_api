@@ -6,7 +6,7 @@ import params from '../../app/configs/params';
 import App from '../../app/app.js';
 import {BAD_REQUEST_CODE, SUCCESS_CODE, VALIDATION_ERROR_CODE} from '../../app/configs/status-codes';
 import {INVALID, REQUIRED, USER_NOT_EXIST, VALIDATION_ERROR} from '../../app/configs/messages';
-import {insertingCustomerUser, insertingUserToken, testPass} from '../../database/data';
+import {insertingUser, testPass} from '../../database/data';
 
 const app = App();
 const expect = chai.expect;
@@ -16,15 +16,15 @@ chai.should();
 chai.use(chaiHttp);
 
 describe('Auth Module', () => {
-    const email = insertingCustomerUser.email,
+    const email = insertingUser.email,
         password = testPass,
         notExistingEmail = 'customer-new@test.com';
 
-    describe('/api/auth/sign-in POST(Sign user in)', () => {
+    describe('/api/auth/login POST(Sign user in)', () => {
 
         it('should give validation error from missing password', (done) => {
             chai.request(app)
-                .post('/api/auth/sign-in')
+                .post('/api/auth/login')
                 .set('origin', params.appUrl)
                 .send({ email })
                 .end((err, res) => {
@@ -41,7 +41,7 @@ describe('Auth Module', () => {
 
         it('should give validation error for missing email', (done) => {
             chai.request(app)
-                .post('/api/auth/sign-in')
+                .post('/api/auth/login')
                 .set('origin', params.appUrl)
                 .send({ password })
                 .end((err, res) => {
@@ -51,14 +51,14 @@ describe('Auth Module', () => {
                     expect(res.body.data).to.be.null;
                     res.body.errors.should.not.be.null;
                     res.body.errors.email.should.not.be.null;
-                    res.body.errors.email.msg.should.be.equal(INVALID('Email'));
+                    res.body.errors.email.msg.should.be.equal(REQUIRED('Email'));
                     done();
                 });
         });
 
         it('should give authentication error for not matching credentials', (done) => {
             chai.request(app)
-                .post('/api/auth/sign-in')
+                .post('/api/auth/login')
                 .set('origin', params.appUrl)
                 .send({ email: notExistingEmail, password })
                 .end((err, res) => {
@@ -73,7 +73,7 @@ describe('Auth Module', () => {
 
         it('should sign in user', (done) => {
             chai.request(app)
-                .post('/api/auth/sign-in')
+                .post('/api/auth/login')
                 .set('origin', params.appUrl)
                 .send({ email, password })
                 .end((err, res) => {
