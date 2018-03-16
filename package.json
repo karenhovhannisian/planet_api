@@ -9,7 +9,7 @@
     "seed:make": "babel-node --presets stage-2 node_modules/knex/bin/cli.js -- seed:make",
     "seed": "NODE_ENV=test babel-node --presets stage-2 node_modules/knex/bin/cli.js -- seed:run",
     "start:dev": "NODE_ENV=development nodemon",
-    "start:prod": "NODE_ENV=production babel-node src/server.js --presets react",
+    "start:prod": "NODE_ENV=production babel-node src/server.js",
     "start": "npm run start:prod",
     "test": "npm run integration",
     "integration": "npm run seed && NODE_ENV=test mocha --compilers js:babel-core/register --require src/db.js src/tests/integration/ --timeout 50000",
