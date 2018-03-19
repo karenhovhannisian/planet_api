@@ -14,7 +14,6 @@ import cookieParser from 'cookie-parser';
 import expressValidator from 'express-validator';
 import {ServiceUnavailable} from './errors';
 
-
 class Application {
     app;
     router;

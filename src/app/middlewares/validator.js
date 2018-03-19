@@ -20,4 +20,4 @@ export default (schema = null) => {
 
         next();
     };
-};
+}; 
